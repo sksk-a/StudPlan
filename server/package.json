@@ -1,0 +1,31 @@
+{
+  "name": "student-planner-server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:studio": "prisma studio --hostname 127.0.0.1 --port 5555 --browser none",
+    "db:migrate": "prisma migrate dev",
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed": "node prisma/seed.js",
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "helmet": "^8.1.0",
+    "express-rate-limit": "^8.1.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "prisma": "6.19.0",
+    "supertest": "^7.1.4"
+  }
+}

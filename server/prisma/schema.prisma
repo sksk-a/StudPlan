@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskType {
+  homework
+  laboratory
+  practice
+  coursework
+  exam
+  other
+}
+
+enum TaskStatus {
+  planned
+  in_progress
+  completed
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @db.VarChar(80)
+  email        String    @unique @db.VarChar(254)
+  passwordHash String    @db.VarChar(255)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  subjects     Subject[]
+  tasks        Task[]
+}
+
+model Subject {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  name      String   @db.VarChar(120)
+  teacher   String   @default("") @db.VarChar(120)
+  color     String   @default("#6366f1") @db.VarChar(7)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  // Composite reference prevents a task from using another user's subject.
+  @@unique([id, userId])
+  @@unique([userId, name])
+}
+
+model Task {
+  id               Int        @id @default(autoincrement())
+  userId           Int
+  subjectId        Int
+  title            String     @db.VarChar(200)
+  description      String     @default("") @db.Text
+  taskType         TaskType
+  deadline         DateTime   @db.Timestamptz(3)
+  importance       Int        @default(2)
+  difficulty       Int        @default(2)
+  estimatedMinutes Int
+  status           TaskStatus @default(planned)
+  createdAt        DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime   @updatedAt @db.Timestamptz(3)
+  completedAt      DateTime?  @db.Timestamptz(3)
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject          Subject    @relation(fields: [subjectId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, deadline])
+  @@index([userId, status])
+  @@index([subjectId, userId])
+}

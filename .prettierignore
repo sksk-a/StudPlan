@@ -1,0 +1,7 @@
+node_modules
+client/dist
+package-lock.json
+PROJECT_PROMPT.md
+server/.env
+artifacts
+test-results
