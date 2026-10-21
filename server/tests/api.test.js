@@ -244,3 +244,31 @@ test('CORS, health and invalid JSON behave correctly', async () => {
     .send('{broken')
     .expect(400);
 });
+
+test('large bodies and expired tokens are rejected without leaking internals', async () => {
+  const jwt = require('jsonwebtoken');
+  const { jwtSecret } = require('../src/config');
+  const expired = jwt.sign({}, jwtSecret, {
+    subject: String(userId), issuer: 'student-planner', expiresIn: -1,
+  });
+  await request(app).get('/api/auth/me').set('Authorization', `Bearer ${expired}`).expect(401);
+  const large = await request(app).post('/api/auth/login').send({ value: 'a'.repeat(65536) }).expect(413);
+  expect(large.body).toEqual({ message: 'Слишком большой запрос.' });
+});
+
+test('behind one trusted proxy login limits are isolated by client IP', async () => {
+  const previous = app.get('trust proxy');
+  app.set('trust proxy', 1);
+  try {
+    const attempt = (ip) => request(app).post('/api/auth/login')
+      .set('X-Forwarded-For', ip).send({ email: 'invalid' }).expect(400);
+    const first = await attempt('192.0.2.10');
+    const second = await attempt('192.0.2.10');
+    const otherClient = await attempt('192.0.2.11');
+    expect(first.headers.ratelimit).toContain('r=99');
+    expect(second.headers.ratelimit).toContain('r=98');
+    expect(otherClient.headers.ratelimit).toContain('r=99');
+  } finally {
+    app.set('trust proxy', previous);
+  }
+});
